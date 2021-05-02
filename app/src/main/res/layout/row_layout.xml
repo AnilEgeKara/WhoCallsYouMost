@@ -16,25 +16,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:textSize="20sp"
+            android:textAlignment="center"
             tools:text="ContactName"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
         <TextView
             android:id="@+id/ContactNumber"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:textSize="16sp"
+            android:textAlignment="center"
             tools:text="ContactNumber"
             app:layout_constraintTop_toBottomOf="@id/ContactName"
             app:layout_constraintStart_toStartOf="parent"/>
+
         <TextView
-            android:id="@+id/CallType"
-            android:layout_width="wrap_content"
+            android:id="@+id/CallDuration"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
-            tools:text="CallType"
-            app:layout_constraintTop_toBottomOf="@id/ContactName"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            android:textAlignment="center"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ContactNumber"
+            tools:text="Duration" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

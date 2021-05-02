@@ -6,6 +6,8 @@ import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import android.Manifest
 import android.provider.CallLog
+import android.util.Log
+import android.widget.GridView
 import android.widget.ListView
 import android.widget.SimpleCursorAdapter
 
@@ -13,8 +15,8 @@ class MainActivity : AppCompatActivity() {
 
     var cols= listOf<String>(
         CallLog.Calls._ID,
+        CallLog.Calls.CACHED_NAME,
         CallLog.Calls.NUMBER,
-        CallLog.Calls.TYPE,
         CallLog.Calls.DURATION,
     ).toTypedArray()
 
@@ -42,11 +44,11 @@ class MainActivity : AppCompatActivity() {
     private fun displayLog() {
 
         var from = listOf<String>(
+            CallLog.Calls.CACHED_NAME ?: CallLog.Calls.NUMBER,
             CallLog.Calls.NUMBER,
-            CallLog.Calls.DURATION,
-            CallLog.Calls.TYPE).toTypedArray()
+            CallLog.Calls.DURATION).toTypedArray()
 
-        var to = intArrayOf(R.id.ContactName,R.id.ContactNumber,R.id.CallType)
+        var to = intArrayOf(R.id.ContactName,R.id.ContactNumber,R.id.CallDuration)
 
         var rs = contentResolver.query(CallLog.Calls.CONTENT_URI,cols,null,null,
             "${CallLog.Calls.LAST_MODIFIED} DESC")
@@ -59,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             to,
             0
         )
-        findViewById<ListView>(R.id.list_view).adapter = adapter
+        findViewById<GridView>(R.id.grid_view).adapter = adapter
     }
 
 }
