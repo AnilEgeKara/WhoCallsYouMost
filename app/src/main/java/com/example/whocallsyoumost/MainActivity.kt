@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.CallLog
 import android.util.Log
 import android.widget.GridView
+import android.widget.ListView
 import android.widget.SimpleCursorAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -13,7 +14,7 @@ import androidx.core.app.ActivityCompat
 class MainActivity : AppCompatActivity() {
 
     private var arrayList:ArrayList<Contact>?=null
-    private var gridView:GridView?=null
+    private var gridView:ListView?=null
     private var contactAdapter:ContactAdapter?=null
 
     var cols= listOf<String>(
@@ -21,17 +22,18 @@ class MainActivity : AppCompatActivity() {
             CallLog.Calls.CACHED_NAME,
             CallLog.Calls.NUMBER,
             CallLog.Calls.DURATION,
-            //"count( ${CallLog.Calls.CACHED_NAME} ) as cc"
-            //  "sum(" + CallLog.Calls.DURATION + ")",
+            CallLog.Calls.TYPE,
     ).toTypedArray()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, Array(1) { Manifest.permission.READ_CALL_LOG }, 101)
+        if(
+            (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)!=PackageManager.PERMISSION_GRANTED)
+        ){
+            ActivityCompat.requestPermissions(this, Array(1) { Manifest.permission.READ_CALL_LOG}, 101)
+            displayLog()
         }else{
             displayLog()
         }
@@ -46,13 +48,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setDataList():ArrayList<Contact>{
-        var arrayList:ArrayList<Contact> =ArrayList()
-        var contacts = getContactList()
-        var numbers = getNumbersList(contacts)
-        var callCounts = getCallCounts(contacts)
-        var sumDuration = getSumDuration(contacts)
+        val arrayList:ArrayList<Contact> =ArrayList()
+        val contacts = getContactList()
+        val numbers = getNumbersList(contacts)
+        val callCounts = getCallCounts(contacts)
+        val sumDuration = getSumDuration(contacts)
+        val callType= getCallType(contacts)
         for(i in 0..contacts.size-1) {
-            arrayList.add(Contact(contacts[i]?:"", numbers[i]?:" ", callCounts[i]?:" ", sumDuration[i]?:" "))
+            arrayList.add(
+                Contact(
+                    contacts[i]?:"",
+                    numbers[i]?:"",
+                    callCounts[i]?:"",
+                    sumDuration[i]?:"",
+                    "Giden ${callType[i].made.toString()}",
+                    "Cevapsız ${callType[i].missed.toString()}",
+                    "Gelen ${callType[i].received.toString()}"
+                )
+            )
         }
 
         return arrayList
@@ -70,11 +83,11 @@ class MainActivity : AppCompatActivity() {
 
     private  fun getContactList():ArrayList<String>{
 
-        var arrayList:ArrayList<String> =ArrayList()
+        val arrayList:ArrayList<String> =ArrayList()
 
-        var rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, null, null,
+        val rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, null, null,
                 "${CallLog.Calls.LAST_MODIFIED} DESC")
-        var length:Int=rs!!.count
+        val length:Int=rs!!.count
 
         for (i in 1..length-1){
             rs.moveToPosition(i)
@@ -91,15 +104,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun getNumbersList(arrayList:ArrayList<String>):ArrayList<String>{
 
-        var numberList:ArrayList<String> =ArrayList()
+        val numberList:ArrayList<String> =ArrayList()
 
         for(i in 0 until arrayList.size){
 
             if(arrayList[i]!=null){
 
-                var selection = "name = '${arrayList[i]}'"
+                val selection = "name = '${arrayList[i]}'"
 
-                var rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
+                val rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
                         "${CallLog.Calls.LAST_MODIFIED} DESC")
                 rs!!.moveToPosition(0)
                 numberList.add(rs!!.getString(rs.getColumnIndex("number")))
@@ -112,15 +125,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getCallCounts(arrayList: ArrayList<String>): ArrayList<String> {
-        var countList:ArrayList<String> =ArrayList()
+        val countList:ArrayList<String> =ArrayList()
 
         for(i in 0 until arrayList.size){
 
             if(arrayList[i]!=null){
 
-                var selection = "name = '${arrayList[i]}'"
+                val selection = "name = '${arrayList[i]}'"
 
-                var rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
+                val rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
                         "${CallLog.Calls.LAST_MODIFIED} DESC")
                 countList.add(rs!!.count.toString())
             }else{
@@ -134,12 +147,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getSumDuration(arrayList: ArrayList<String>): ArrayList<String> {
-        var countList:ArrayList<String> =ArrayList()
+        val countList:ArrayList<String> =ArrayList()
         var sum = 0
         for(i in 0 until arrayList.size){
             if(arrayList[i]!=null){
-                var selection = "name = '${arrayList[i]}'"
-                var rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
+                val selection = "name = '${arrayList[i]}'"
+                val rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
                         "${CallLog.Calls.LAST_MODIFIED} DESC")
                 for (j in 0 until rs!!.count){
                     rs.moveToPosition(j)
@@ -156,6 +169,38 @@ class MainActivity : AppCompatActivity() {
         }
 
         return countList
+    }
+
+    private fun getCallType(arrayList: ArrayList<String>): ArrayList<CallType> {
+        val callTypeList:ArrayList<CallType> =ArrayList()
+        var sumMade = 0
+        var sumMissed = 0
+        var sumReceived = 0
+        for(i in 0 until arrayList.size){
+            if(arrayList[i]!=null){
+                val selection = "name = '${arrayList[i]}'"
+                val rs = contentResolver.query(CallLog.Calls.CONTENT_URI, cols, selection, null,
+                    "${CallLog.Calls.LAST_MODIFIED} DESC")
+                for (j in 0 until rs!!.count){
+                    rs.moveToPosition(j)
+                    if(rs!!.getString(rs.getColumnIndex("type"))=="1"){
+                        sumReceived++
+                    }else if (rs!!.getString(rs.getColumnIndex("type"))=="2"){
+                        sumMade++
+                    }else if (rs!!.getString(rs.getColumnIndex("type"))=="3"){
+                        sumMissed++
+                    }else{}
+                }
+                callTypeList.add(CallType(sumMade,sumMissed,sumReceived))
+                 sumMade = 0
+                 sumMissed = 0
+                 sumReceived = 0
+            }else{
+                callTypeList.add(CallType(0,0,0))
+            }
+        }
+
+        return callTypeList
     }
 
 }
